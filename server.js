@@ -1,29 +1,43 @@
 const express = require("express");
 const https = require("https");
 const app = express();
+const path = require('path');
+var exphbs  = require('express-handlebars');
+
+app.use(express.static(path.join(__dirname,"public")));
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended:true}));
 
-let city = "Chennai";
-const url = 'https://api.openweathermap.org/data/2.5/weather?q='+city+'&units=metric&appid=d7341b26674f21af2d9ec5d64717913b';
-
+// set view engine
+app.set("view engine","hbs");
+let curr_temp = 0;
+let cityInput = "Chennai";
 app.post("/",(req,res)=>{
-    city = req.body.city;
-    let temperature = req.body.temp; 
+    let city = req.body.city;
+    cityInput = city;
+    const url = 'https://api.openweathermap.org/data/2.5/weather?q='+city+'&units=metric&appid=d7341b26674f21af2d9ec5d64717913b';
     https.get(url,(response)=>{
-        response.on("data",(data)=>{
-            let weatherData = JSON.parse(data);
-            temperature= weatherData.main.temp;
-            
-        })
-    })
-    res.send("lol");
+        response.on("data",function(data){
+            const weatherData = JSON.parse(data);
+            const temperature= weatherData.main.temp;
+            curr_temp = temperature;
+            // res.write("temp is "+temperature);
+            res.redirect('/');
+        });
+    });
 })
 
-app.get("/",function(req,res){
-    res.sendFile(__dirname+"/index.html");
+// template engine route
+app.get("/",(req,res)=>{
+    res.render("index",
+    {temp: curr_temp+" C" ,cityName: cityInput } );
+
 })
+
+// app.get("/",function(req,res){
+//     res.sendFile(__dirname,"public","index.html");
+// })
 
 
 app.listen(3000,()=>{
